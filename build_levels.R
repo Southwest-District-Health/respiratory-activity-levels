@@ -35,9 +35,7 @@ GEO_CACHE <- "hd3_counties.geojson"       # built once from the shapefile
 DEFAULT_DISEASE <- "flu"
 
 # SD above baseline where each level begins: Low, Moderate, High, Very High.
-# These drive BOTH the map colors AND the methodology text on the page.
-# c(2, 4, 7, 9) is what the Shiny app's code used.
-# The Shiny app's methodology TEXT said c(2, 5, 8, 10). Decide which is right.
+
 THRESHOLDS <- c(2, 4, 7, 9)
 
 LEVEL_NAMES  <- c("Minimal", "Low", "Moderate", "High", "Very High")
