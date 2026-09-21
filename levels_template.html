@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Respiratory Illness Levels and What You Can Do</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --navy:      #1a3a5c;
+    --blue:      #2a5298;
+    --page:      #e8ecf2;
+    --card:      #ffffff;
+    --ink:       #2c3e50;
+    --muted:     #444;
+    --line:      #dde3ed;
+    --hover:     #eef3fb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Header */
+  .app-header {
+    padding: 22px 20px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+    box-shadow: 0 4px 16px rgba(26,58,92,0.25);
+  }
+  .header-title {
+    margin: 0 0 8px;
+    font-size: clamp(19px, 3.2vw, 24px);
+    font-weight: 800;
+    line-height: 1.25;
+    color: #fff;
+    letter-spacing: -0.2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .header-subtitle {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--navy);
+    background: rgba(255,255,255,0.92);
+    padding: 3px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+  }
+  .header-note {
+    margin: 8px 0 0;
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.85);
+  }
+
+  /* Layout */
+  .wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 22px 20px 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; padding: 16px 12px 32px; }
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 6px 18px rgba(0,0,0,0.07);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+
+  /* Disease selector */
+  .picker legend {
+    padding: 0;
+    margin-bottom: 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .picker fieldset { border: 0; margin: 0; padding: 0; }
+  .picker label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 2px 0;
+    padding: 8px 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: background 0.13s, border-color 0.13s;
+  }
+  .picker label:hover { background: var(--hover); border-color: #b8cce8; }
+  .picker input[type=radio] { accent-color: var(--navy); margin: 0; }
+  .picker input[type=radio]:checked + span { font-weight: 700; color: var(--navy); }
+
+  /* Map */
+  #map {
+    height: 450px;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.15);
+    background: #dfe6ee;
+  }
+  @media (max-width: 900px) { #map { height: 360px; } }
+
+
+  .legend {
+    background: rgba(255,255,255,0.94);
+    padding: 8px 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    font: 12px/1.5 Inter, Arial, sans-serif;
+    color: var(--ink);
+  }
+  .legend-title { font-weight: 700; text-align: center; margin-bottom: 4px; }
+  .legend-row { display: flex; align-items: center; gap: 7px; }
+  .swatch {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+
+  /* County list under the map: readable without hovering, and for screen readers */
+  .county-list {
+    margin: 14px 0 0;
+    padding: 12px 16px;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 18px;
+  }
+  .county-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .county-list .cty { font-weight: 600; min-width: 84px; }
+
+  /* Methodology */
+  .method {
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--muted);
+    border-left: 4px solid var(--blue);
+    border-radius: 0 14px 14px 0;
+  }
+  .method h2 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.04em;
+  }
+  .method p { margin: 0 0 6px; }
+  .method ul { margin: 4px 0 0; padding-left: 20px; }
+  .method strong { color: var(--navy); }
+
+  /* Table image */
+  .table-card { padding: 10px; }
+  .table-card img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
+
+  /* Guidance panels */
+  .panel-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  #closeAll {
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 16px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1.5px solid #b8cce8;
+    color: var(--navy);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  #closeAll:hover { background: var(--hover); border-color: var(--blue); }
+
+  details {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 40px 12px 20px;
+    position: relative;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--navy);
+    background: #f4f7fb;
+    border-left: 4px solid var(--blue);
+    letter-spacing: 0.01em;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: "";
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--navy);
+    border-bottom: 2px solid var(--navy);
+    transform: translateY(-70%) rotate(45deg);
+    transition: transform 0.15s;
+  }
+  details[open] summary {
+    background: #e4ecf9;
+    border-left-color: var(--navy);
+    border-bottom: 1px solid #c8d8ee;
+  }
+  details[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
+  summary:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .panel-body {
+    padding: 14px 18px 14px 22px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: #3a3a3a;
+  }
+  .panel-body ul { padding-left: 18px; margin: 0 0 8px; }
+  .panel-body ul:last-child { margin-bottom: 0; }
+  .panel-body li { margin-bottom: 6px; }
+  .panel-body p { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1 class="header-title">Respiratory Illness Levels and What You Can Do</h1>
+  <span class="header-subtitle" id="weekEnding"></span>
+  <p class="header-note" id="updateNote"></p>
+</header>
+
+<main class="wrap">
+
+  <!-- LEFT -->
+  <section>
+    <div class="card picker">
+      <fieldset>
+        <legend>Select a disease:</legend>
+        <div id="diseaseOptions"></div>
+      </fieldset>
+    </div>
+
+    <div id="map" role="img" aria-label="Map of activity levels by county"></div>
+
+    <ul class="card county-list" id="countyList" aria-live="polite"></ul>
+
+    <div class="card method">
+      <h2>HOW ARE THE ACTIVITY LEVELS DETERMINED</h2>
+      <p>Flu, COVID-19 and RSV activity levels are based on the number of people who
+      go to emergency rooms in our area because they have a respiratory illness. We
+      compare that number to the baseline, when not many people are sick due to
+      respiratory illnesses.</p>
+      <p>The metric used to determine activity levels is based on standard deviation
+      (SD), which shows how much the data values vary from the baseline. The higher the
+      SD, the greater the risk of exposure and illness.</p>
+      <ul id="methodLevels"></ul>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <section>
+    <div class="card table-card" id="tableCard" hidden>
+      <img id="tableImg" alt="">
+    </div>
+
+    <div class="panel-bar">
+      <button type="button" id="closeAll">Close All Panels</button>
+    </div>
+
+    <details>
+      <summary>STEPS YOU CAN TAKE FOR CLEANER AIR</summary>
+      <div class="panel-body">
+        <ul>
+          <li>Bring as much fresh air into your home as possible by opening doors and windows and/or using exhaust fans.</li>
+          <li>If your home has central heating, ventilation, and air conditioning system (HVAC) that has a filter, set the fan to 'on' when you have visitors and use appropriate filters.</li>
+          <li>You may use a portable high-efficiency particulate air (HEPA) cleaner.</li>
+          <li>Move activities outdoors when the weather permits.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>HANDWASHING: HOW IT WORKS</summary>
+      <div class="panel-body">
+        <p>Washing your hands is easy, and it's one of the most effective ways to prevent the spread of germs. Follow these five steps every time.</p>
+        <ul>
+          <li>Wet your hands with clean, running water (warm or cold), turn off the tap, and apply soap.</li>
+          <li>Lather your hands by rubbing them together with the soap.</li>
+          <li>Scrub your hands for at least 20 seconds.</li>
+          <li>Rinse your hands well under clean, running water.</li>
+          <li>Dry your hands using a clean towel or an air dryer.</li>
+        </ul>
+        <p>Use hand sanitizer when you can't use soap and water:</p>
+        <ul>
+          <li>Washing hands with soap and water is the best way to get rid of germs in most situations. If soap and water are not readily available, you can use an alcohol-based hand sanitizer that contains at least 60% alcohol. You can tell if the sanitizer contains at least 60% alcohol by looking at the product label.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>WHO IS AT HIGHER RISK FOR SEVERE ILLNESS FROM RESPIRATORY INFECTIONS?</summary>
+      <div class="panel-body">
+        <p>If you or someone around you has one or more risk factors for severe illness, using prevention strategies is especially important. Individuals who are at high risk for severe illness include:</p>
+        <ul>
+          <li>Older adults</li>
+          <li>Young children</li>
+          <li>People with weakened immune systems</li>
+          <li>People with disabilities</li>
+          <li>Pregnant women</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>WHEN YOU MAY HAVE A RESPIRATORY ILLNESS...</summary>
+      <div class="panel-body">
+        <p>Stay home and away from others if you have respiratory virus symptoms. These symptoms can include fever, chills, fatigue, cough, runny nose, and headache, among others. Other symptoms may include but are not limited to chest discomfort, chills, cough, decrease in appetite, diarrhea, fatigue (tiredness), fever or feeling feverish, headache, muscle or body aches, new loss of taste or smell, runny or stuffy nose, sneezing, sore throat, vomiting, weakness, wheezing.</p>
+        <p>You can go back to normal activities when, for at least 24 hours:</p>
+        <ul>
+          <li>Your symptoms are improving.</li>
+          <li>You have not had a fever without medication.</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+</main>
+
+<script>
+const P = /*__DATA__*/;
+
+/* Header */
+document.getElementById("weekEnding").textContent = "Data for the week ending " + P.weekEnding;
+document.getElementById("updateNote").textContent = P.updateNote;
+
+/* Methodology, generated from the same thresholds that color the map */
+(function () {
+  const t = P.thresholds;
+  const text = [
+    "Activity is within " + t[0] + " SD above the baseline.",
+    "Activity is between " + t[0] + " and " + t[1] + " SD above the baseline.",
+    "Activity is between " + t[1] + " and " + t[2] + " SD above the baseline.",
+    "Activity is between " + t[2] + " and " + t[3] + " SD above the baseline.",
+    "Activity is greater than " + t[3] + " SD above the baseline."
+  ];
+  const ul = document.getElementById("methodLevels");
+  P.levelNames.forEach(function (name, i) {
+    const li = document.createElement("li");
+    li.innerHTML = "<strong>" + name + ":</strong> " + text[i];
+    ul.appendChild(li);
+  });
+})();
+
+/* Table image */
+if (P.tableImage) {
+  const img = document.getElementById("tableImg");
+  img.src = P.tableImage;
+  img.alt = P.tableAlt || "";
+  document.getElementById("tableCard").hidden = false;
+}
+
+/* Disease selector */
+const params = new URLSearchParams(window.location.search);
+const wanted = (params.get("disease") || "").toLowerCase();
+let current = P.diseases.some(d => d.id === wanted) ? wanted : P.defaultDisease;
+
+const optBox = document.getElementById("diseaseOptions");
+P.diseases.forEach(function (d) {
+  const label = document.createElement("label");
+  const input = document.createElement("input");
+  input.type = "radio";
+  input.name = "disease";
+  input.value = d.id;
+  input.checked = d.id === current;
+  input.addEventListener("change", function () { current = d.id; render(); });
+  const span = document.createElement("span");
+  span.textContent = d.label;
+  label.appendChild(input);
+  label.appendChild(span);
+  optBox.appendChild(label);
+});
+
+/* Map: Esri World Street Map basemap (covered by SWDH's ArcGIS Online license;
+   Esri's terms require the attribution shown in the corner) */
+const map = L.map("map", {
+  scrollWheelZoom: false,
+  zoomSnap: 0.25,
+  minZoom: 6,
+  maxZoom: 12
+});
+
+L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+  {
+    maxZoom: 12,
+    attribution: 'Powered by <a href="https://www.esri.com">Esri</a> &mdash; ' +
+                 'Sources: Esri, HERE, Garmin, USGS, Intermap, NRCan, ' +
+                 'OpenStreetMap contributors, and the GIS User Community'
+  }
+).addTo(map);
+
+function levelOf(county) {
+  const v = (P.levels[current] || {})[county];
+  return (typeof v === "number" && v >= 1 && v <= 5) ? v : null;
+}
+function levelName(v) { return v ? P.levelNames[v - 1] : "Not available"; }
+function levelColor(v) { return v ? P.levelColors[v - 1] : "#cccccc"; }
+
+function tooltipHtml(county) {
+  return "<strong>County:</strong> " + county +
+         "<br><strong>Activity Level:</strong> " + levelName(levelOf(county));
+}
+
+const counties = L.geoJSON(P.geojson, {
+  style: function (f) {
+    return {
+      fillColor: levelColor(levelOf(f.properties.NAME)),
+      fillOpacity: 0.6,
+      color: "#ffffff",
+      weight: 1.5
+    };
+  },
+  onEachFeature: function (f, layer) {
+    layer.bindTooltip(tooltipHtml(f.properties.NAME), {
+      sticky: true, direction: "auto", className: "county-tip"
+    });
+    layer.on({
+      mouseover: function (e) { e.target.setStyle({ weight: 3 }); e.target.bringToFront(); },
+      mouseout:  function (e) { e.target.setStyle({ weight: 1.5 }); }
+    });
+  }
+}).addTo(map);
+
+map.fitBounds(counties.getBounds(), { padding: [12, 12] });
+window.addEventListener("resize", function () {
+  map.fitBounds(counties.getBounds(), { padding: [12, 12] });
+});
+/* Legend */
+const legend = L.control({ position: "topleft" });
+legend.onAdd = function () {
+  const div = L.DomUtil.create("div", "legend");
+  let html = '<div class="legend-title">Activity Level</div>';
+  P.levelNames.forEach(function (n, i) {
+    html += '<div class="legend-row"><span class="swatch" style="background:' +
+            P.levelColors[i] + ';opacity:0.75"></span>' + n + "</div>";
+  });
+  div.innerHTML = html;
+  return div;
+};
+legend.addTo(map);
+
+/* Redraw on disease change */
+function render() {
+  counties.eachLayer(function (layer) {
+    const name = layer.feature.properties.NAME;
+    layer.setStyle({ fillColor: levelColor(levelOf(name)) });
+    layer.setTooltipContent(tooltipHtml(name));
+  });
+
+  const list = document.getElementById("countyList");
+  list.innerHTML = "";
+  P.counties.forEach(function (c) {
+    const v = levelOf(c);
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="swatch" style="background:' + levelColor(v) +
+                   ';opacity:0.75"></span><span class="cty">' + c + "</span>" +
+                   "<span>" + levelName(v) + "</span>";
+    list.appendChild(li);
+  });
+
+  const label = (P.diseases.find(d => d.id === current) || {}).label || "";
+  document.getElementById("map").setAttribute(
+    "aria-label", "Map of " + label + " activity levels by county"
+  );
+}
+render();
+
+/* Close all guidance panels */
+document.getElementById("closeAll").addEventListener("click", function () {
+  document.querySelectorAll("details[open]").forEach(function (d) { d.open = false; });
+});
+</script>
+</body>
+</html>
