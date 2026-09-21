@@ -64,8 +64,7 @@ Bureau's 2020 TIGER/Line files.
 
 ## Contact
 
-Maintained by Lekshmi Rita-Venugopal
-Epidemiologist Program Manager 1
+Maintained by Lekshmi Rita-Venugopal, MD, MPH, Epidemiologist Program Manager,
 Southwest District Health.
 
 This page is for general awareness and is not a medical diagnosis.
