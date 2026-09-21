@@ -1,3 +1,9 @@
+# Source data and records: never commit
+*.xlsx
+*.csv
+*.rds
+tl_2020_us_county*
+
 # History files
 .Rhistory
 .Rapp.history
