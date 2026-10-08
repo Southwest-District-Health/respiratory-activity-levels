@@ -4,8 +4,7 @@ How to update the activity levels page each Monday, September through May.
 It takes about ten minutes, and anyone with access to the ED visit exports and
 write access to this repo can do it.
 
-All the work happens in the project folder:
-`Documents\Respiratory activity map` (in R, `~/Respiratory activity map`).
+All the work happens in the project folder: Documents\Respiratory activity map (in R, ~/Respiratory activity map). The project directory and folder names are based on Lekshmi's local device. Please use your own folder names, and update PROJECT_DIR at the top of build_levels.R to match.
 
 ---
 
