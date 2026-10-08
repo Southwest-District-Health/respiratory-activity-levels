@@ -14,6 +14,10 @@
 #   tl_2020_us_county.shp         (first run only; downloaded if missing)
 # ---------------------------------------------------------------------------
 
+#The project directory and folder names are based on Lekshmi's local device.
+# Please use your own folder names and change PROJECT_DIR to match.
+
+
 PROJECT_DIR <- "~/Respiratory activity map"
 setwd(PROJECT_DIR)
 
