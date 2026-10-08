@@ -19,7 +19,7 @@ Save the three exports into the project folder, replacing last week's files:
 
 Each file needs one column per county: `ID_Adams`, `ID_Canyon`, `ID_Gem`,
 `ID_Owyhee`, `ID_Payette`, and `ID_Washington`. The script drops the last row
-of each file, the same way the original app did.
+of each file.
 
 If a column is missing or has a blank cell, the script stops and tells you
 which file and which county. It won't publish a page with a hole in it.
